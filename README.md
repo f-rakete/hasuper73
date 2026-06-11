@@ -59,7 +59,7 @@ logger:
 ## Attribution
 
 The BLE UUIDs, register IDs, polling order, and frame decoding are based on
-[Walker73](https://github.com/f-rakete/Walker73).
+[Walker73](https://github.com/AxelFougues/Walker73).
 
 ## Releasing
 
