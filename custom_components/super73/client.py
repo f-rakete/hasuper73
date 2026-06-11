@@ -49,6 +49,7 @@ class Super73Client:
         self._client: BleakClient | None = None
         self._callbacks: list[StateCallback] = []
         self._operation_lock = asyncio.Lock()
+        self._paired = False
 
     def register_callback(self, callback_fn: StateCallback) -> None:
         """Register a callback for parsed state changes."""
@@ -87,6 +88,7 @@ class Super73Client:
             self.name,
             self._disconnected,
         )
+        await self._pair_if_supported()
 
         services = self._client.services
         if METRICS_SERVICE not in {service.uuid for service in services}:
@@ -131,11 +133,39 @@ class Super73Client:
     async def _read_register(self, register_id: bytes) -> None:
         """Select and read a metrics register."""
         client = self._require_client()
+        try:
+            raw = await self._read_register_once(client, register_id)
+        except Exception as err:
+            if "Insufficient authentication" not in str(err):
+                raise
+            _LOGGER.debug("SUPER73 register read requires authentication; pairing")
+            await self._pair_if_supported(force=True)
+            raw = await self._read_register_once(client, register_id)
+        self._process_frame(raw)
+
+    async def _read_register_once(
+        self, client: BleakClient, register_id: bytes
+    ) -> bytes:
+        """Select and read a metrics register once."""
         await client.write_gatt_char(
             METRICS_CHARACTERISTIC_REGISTER_ID, register_id, response=True
         )
-        raw = bytes(await client.read_gatt_char(METRICS_CHARACTERISTIC_REGISTER))
-        self._process_frame(raw)
+        return bytes(await client.read_gatt_char(METRICS_CHARACTERISTIC_REGISTER))
+
+    async def _pair_if_supported(self, force: bool = False) -> None:
+        """Pair with the bike when the active BLE backend supports pairing."""
+        if self._paired and not force:
+            return
+        client = self._require_client()
+        pair = getattr(client, "pair", None)
+        if pair is None:
+            _LOGGER.debug("BLE backend does not expose pairing")
+            return
+        try:
+            await asyncio.wait_for(pair(), timeout=30)
+            self._paired = True
+        except Exception as err:  # noqa: BLE001 - pairing support depends on backend.
+            _LOGGER.debug("Unable to pair with SUPER73: %s", err)
 
     def _process_frame(self, raw: bytes) -> None:
         """Process one 10-byte metrics frame."""
