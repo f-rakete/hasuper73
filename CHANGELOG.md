@@ -9,6 +9,11 @@ three values aligned:
 - `custom_components/super73/manifest.json`
 - the GitHub release/tag, prefixed with `v`
 
+## 0.1.2 - 2026-06-11
+
+- Add Bluetooth discovery by advertised SUPER73 local name when the bike does not advertise the metrics service UUID.
+- Keep post-connect metrics service validation so name-based discovery does not create unsupported entries.
+
 ## 0.1.1 - 2026-06-11
 
 - Add BLE pairing attempt and retry when the bike returns insufficient authentication.

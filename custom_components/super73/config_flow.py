@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from fnmatch import fnmatchcase
 from typing import Any
 
 import voluptuous as vol
@@ -11,7 +12,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, METRICS_SERVICE
+from .const import DOMAIN, LOCAL_NAME_MATCHERS, METRICS_SERVICE
 
 
 class Super73ConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -25,7 +26,7 @@ class Super73ConfigFlow(ConfigFlow, domain=DOMAIN):
         self, discovery_info: BluetoothServiceInfoBleak
     ) -> ConfigFlowResult:
         """Handle Bluetooth discovery."""
-        if METRICS_SERVICE not in {uuid.lower() for uuid in discovery_info.service_uuids}:
+        if not _is_supported_discovery(discovery_info):
             return self.async_abort(reason="not_supported")
 
         await self.async_set_unique_id(discovery_info.address)
@@ -85,3 +86,13 @@ class Super73ConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=schema, errors=errors
         )
+
+
+def _is_supported_discovery(discovery_info: BluetoothServiceInfoBleak) -> bool:
+    """Return whether the advertisement looks like a SUPER73 bike."""
+    service_uuids = {uuid.lower() for uuid in discovery_info.service_uuids}
+    if METRICS_SERVICE in service_uuids:
+        return True
+
+    name = discovery_info.name or ""
+    return any(fnmatchcase(name, matcher) for matcher in LOCAL_NAME_MATCHERS)

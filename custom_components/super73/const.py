@@ -5,6 +5,9 @@ from __future__ import annotations
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 DOMAIN = "super73"
+VERSION = "0.1.2"
+
+LOCAL_NAME_MATCHERS = ("SUPER73*", "Super73*", "super73*")
 
 GENERIC_ACCESS_SERVICE = "00001800-0000-1000-8000-00805f9b34fb"
 GENERIC_ACCESS_NAME_CHARACTERISTIC = "00002a00-0000-1000-8000-00805f9b34fb"

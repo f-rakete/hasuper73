@@ -5,11 +5,12 @@ Display vehicles using the Bluetooth protocol documented by Walker73.
 
 ## Status
 
-Current version: `0.1.1`
+Current version: `0.1.2`
 
 This is an early implementation intended for testing against a real bike. It:
 
 - Discovers bikes exposing the metrics service UUID.
+- Discovers likely SUPER73 bikes by advertised Bluetooth name.
 - Allows manual setup by Bluetooth address.
 - Subscribes to the metrics notifier.
 - Reads the same startup registers as Walker73.
