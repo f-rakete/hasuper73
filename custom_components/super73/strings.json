@@ -1,0 +1,43 @@
+{
+  "config": {
+    "step": {
+      "bluetooth_confirm": {
+        "title": "Add SUPER73 Bluetooth",
+        "description": "Set up {name} ({address})."
+      },
+      "user": {
+        "title": "Add SUPER73 Bluetooth",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth address"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This bike is already configured.",
+      "not_supported": "This Bluetooth device does not expose the SUPER73 metrics service."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": { "name": "Battery" },
+      "range": { "name": "Range" },
+      "speed": { "name": "Speed" },
+      "odometer": { "name": "Odometer" },
+      "wheel_rpm": { "name": "Wheel RPM" },
+      "pedal_rpm": { "name": "Pedal RPM" },
+      "battery_voltage": { "name": "Battery voltage" },
+      "charge_current": { "name": "Charge current" },
+      "assist": { "name": "Assist" },
+      "mode": { "name": "Mode" },
+      "mode_name": { "name": "Mode name" },
+      "raw_range": { "name": "Raw range" }
+    },
+    "binary_sensor": {
+      "light": { "name": "Light" },
+      "walk_mode": { "name": "Walk mode" },
+      "charging": { "name": "Charging" },
+      "limp_mode": { "name": "Limp mode" }
+    }
+  }
+}
