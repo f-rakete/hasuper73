@@ -1,5 +1,9 @@
 # SUPER73 Bluetooth for Home Assistant
 
+<p align="center">
+  <img src="assets/icon.png" alt="SUPER73 Bluetooth" width="160">
+</p>
+
 Read-only HACS custom integration for SUPER73 bikes and other Comodule Diamond
 Display vehicles using the Bluetooth protocol documented by Walker73.
 
@@ -27,6 +31,9 @@ Add this repository to HACS as a custom repository:
 
 Install the integration, restart Home Assistant, then add **SUPER73 Bluetooth**
 from **Settings > Devices & services**.
+
+The repository icon is included at `assets/icon.png`. Home Assistant's
+integration tile branding is controlled by the Home Assistant Brands repository.
 
 ## Entities
 
