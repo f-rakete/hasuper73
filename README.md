@@ -9,7 +9,7 @@ Display vehicles using the Bluetooth protocol documented by Walker73.
 
 ## Status
 
-Current version: `0.1.2`
+Current version: `0.1.3`
 
 This is an early implementation intended for testing against a real bike. It:
 

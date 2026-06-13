@@ -58,6 +58,9 @@ class Super73DataUpdateCoordinator(DataUpdateCoordinator[Super73State]):
         try:
             return await self.client.async_update()
         except Exception as err:
+            if self.data is not None:
+                _LOGGER.debug("Keeping last known SUPER73 state: %s", err)
+                return self.data
             raise UpdateFailed(f"Unable to update SUPER73 state: {err}") from err
 
     async def async_shutdown(self) -> None:
