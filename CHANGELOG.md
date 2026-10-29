@@ -9,6 +9,11 @@ three values aligned:
 - `custom_components/super73/manifest.json`
 - the GitHub release/tag, prefixed with `v`
 
+## 0.1.4 - 2026-10-29
+
+- Add an "In range" presence binary sensor based on Bluetooth advertisements only, so passive scanners count too and it works without a connection. It turns off after 3 minutes without advertisements, and its `source` and `rssi` attributes show which scanner heard the bike when it came into range.
+- Set up the integration even when the bike is off or away. Entities that need a connection stay unavailable until the first successful update.
+
 ## 0.1.3 - 2026-06-13
 
 - Keep the last known bike state when later Bluetooth updates fail, so normal offline periods do not clear entity values.

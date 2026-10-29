@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 DOMAIN = "super73"
@@ -43,6 +45,11 @@ DEFAULT_CELL_S_COUNT = 13
 DEFAULT_BASE_MAX_RANGE_KM = 60.0
 DEFAULT_REAL_MAX_RANGE_KM = 60.0
 DEFAULT_CHARGE_CURRENT_THRESHOLD_A = 2.0
+
+# The bike switches itself off after 5 minutes idle, so a few minutes without
+# advertisements means it is off or gone.
+PRESENCE_TIMEOUT_SECONDS = 180
+PRESENCE_CHECK_INTERVAL = timedelta(seconds=30)
 
 CONF_BASE_MAX_RANGE_KM = "base_max_range_km"
 CONF_REAL_MAX_RANGE_KM = "real_max_range_km"

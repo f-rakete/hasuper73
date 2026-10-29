@@ -9,7 +9,7 @@ Display vehicles using the Bluetooth protocol documented by Walker73.
 
 ## Status
 
-Current version: `0.1.3`
+Current version: `0.1.4`
 
 This is an early implementation intended for testing against a real bike. It:
 
@@ -52,6 +52,14 @@ integration tile branding is controlled by the Home Assistant Brands repository.
 - Walk mode
 - Charging
 - Limp mode
+- In range
+
+**In range** only listens to Bluetooth advertisements and never connects, so
+any scanner counts, including passive ones such as Shelly devices. It turns on
+with the first advertisement and off after 3 minutes without one. The bike
+switches itself off after 5 minutes idle, so a fresh "on" usually means it was
+just switched on, for example on arrival. The `source` and `rssi` attributes
+show which scanner heard it when it came into range.
 
 ## Debug logging
 

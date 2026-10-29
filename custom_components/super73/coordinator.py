@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .client import Super73Client
 from .const import DOMAIN
 from .models import Super73State
+from .presence import Super73PresenceTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class Super73DataUpdateCoordinator(DataUpdateCoordinator[Super73State]):
         self.name: str = entry.data.get(CONF_NAME, "SUPER73")
         self.client = Super73Client(hass, self.address, self.name)
         self.client.register_callback(self._handle_state_update)
+        self.presence = Super73PresenceTracker(hass, self.address)
 
         super().__init__(
             hass,

@@ -37,7 +37,8 @@
       "light": { "name": "Light" },
       "walk_mode": { "name": "Walk mode" },
       "charging": { "name": "Charging" },
-      "limp_mode": { "name": "Limp mode" }
+      "limp_mode": { "name": "Limp mode" },
+      "in_range": { "name": "In range" }
     }
   }
 }

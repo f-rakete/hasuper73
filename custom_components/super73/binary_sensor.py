@@ -61,7 +61,13 @@ async def async_setup_entry(
     """Set up SUPER73 binary sensors."""
     coordinator: Super73DataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        Super73BinarySensor(coordinator, description) for description in BINARY_SENSORS
+        [
+            *(
+                Super73BinarySensor(coordinator, description)
+                for description in BINARY_SENSORS
+            ),
+            Super73InRangeBinarySensor(coordinator),
+        ]
     )
 
 
@@ -88,3 +94,38 @@ class Super73BinarySensor(
     def is_on(self) -> bool | None:
         """Return the binary sensor state."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class Super73InRangeBinarySensor(BinarySensorEntity):
+    """Whether any Bluetooth scanner currently hears the bike.
+
+    Based on advertisements only, so it stays available while the bike
+    cannot be connected to.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "in_range"
+    _attr_device_class = BinarySensorDeviceClass.PRESENCE
+    _attr_should_poll = False
+
+    def __init__(self, coordinator: Super73DataUpdateCoordinator) -> None:
+        """Initialize the sensor."""
+        self._presence = coordinator.presence
+        self._attr_unique_id = f"{coordinator.address}_in_range"
+        self._attr_device_info = coordinator.device_info
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to presence changes."""
+        self.async_on_remove(
+            self._presence.async_add_listener(self.async_write_ha_state)
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True while the bike is heard."""
+        return self._presence.in_range
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | int | None]:
+        """Return the scanner that heard the bike when it came into range."""
+        return {"source": self._presence.source, "rssi": self._presence.rssi}

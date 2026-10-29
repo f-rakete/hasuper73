@@ -15,7 +15,12 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SUPER73 from a config entry."""
     coordinator = Super73DataUpdateCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+    coordinator.presence.async_start()
+    entry.async_on_unload(coordinator.presence.async_stop)
+
+    # The bike is usually switched off or away, so setup must not depend on a
+    # connection. Entities stay unavailable until the first successful update.
+    await coordinator.async_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
