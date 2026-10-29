@@ -13,6 +13,7 @@ three values aligned:
 
 - Add an "In range" presence binary sensor based on Bluetooth advertisements only, so passive scanners count too and it works without a connection. It turns off after 3 minutes without advertisements, and its `source` and `rssi` attributes show which scanner heard the bike when it came into range.
 - Set up the integration even when the bike is off or away. Entities that need a connection stay unavailable until the first successful update.
+- Ship English and German translations in `translations/`. Custom integrations do not read `strings.json`, so entity names were missing before: entities without a device class had no name, the others showed Home Assistant's generic device-class name. Existing entity IDs do not change.
 
 ## 0.1.3 - 2026-06-13
 

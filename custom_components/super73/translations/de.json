@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "bluetooth_confirm": {
+        "title": "SUPER73 Bluetooth hinzufügen",
+        "description": "{name} ({address}) einrichten."
+      },
+      "user": {
+        "title": "SUPER73 Bluetooth hinzufügen",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth-Adresse"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Dieses Fahrrad ist bereits eingerichtet.",
+      "not_supported": "Dieses Bluetooth-Gerät bietet den SUPER73-Metrikdienst nicht an."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery": { "name": "Akku" },
+      "range": { "name": "Reichweite" },
+      "speed": { "name": "Geschwindigkeit" },
+      "odometer": { "name": "Kilometerstand" },
+      "wheel_rpm": { "name": "Raddrehzahl" },
+      "pedal_rpm": { "name": "Trittfrequenz" },
+      "battery_voltage": { "name": "Akkuspannung" },
+      "charge_current": { "name": "Ladestrom" },
+      "assist": { "name": "Unterstützungsstufe" },
+      "mode": { "name": "Modus" },
+      "mode_name": { "name": "Modusname" },
+      "raw_range": { "name": "Reichweite (Rohwert)" }
+    },
+    "binary_sensor": {
+      "light": { "name": "Licht" },
+      "walk_mode": { "name": "Schiebehilfe" },
+      "charging": { "name": "Laden" },
+      "limp_mode": { "name": "Notlaufmodus" },
+      "in_range": { "name": "In Reichweite" }
+    }
+  }
+}
