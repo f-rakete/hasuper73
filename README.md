@@ -9,18 +9,32 @@ Display vehicles using the Bluetooth protocol documented by Walker73.
 
 ## Status
 
-Current version: `0.1.4`
+Current version: `0.2.0`
 
 This is an early implementation intended for testing against a real bike. It:
 
 - Discovers bikes exposing the metrics service UUID.
 - Discovers likely SUPER73 bikes by advertised Bluetooth name.
 - Allows manual setup by Bluetooth address.
-- Subscribes to the metrics notifier.
-- Reads the same startup registers as Walker73.
+- Connects every 10 seconds, reads the registers Walker73 decodes, and
+  disconnects again.
 - Exposes read-only sensors and binary sensors.
 
-No write/control entities are exposed.
+No write/control entities are exposed. The integration never changes the ride
+mode, assist or light.
+
+## Bluetooth connection
+
+The bike accepts one Bluetooth connection at a time and stops advertising while
+something is connected. So the integration doesn't keep a connection open: each
+update connects, pairs (Just Works, or re-encrypts with the stored bond), reads,
+and disconnects. The bike is only busy while an update is reading it and is
+free for the official app or another controller the rest of the time.
+
+If the bike is busy with another device, switched off, or away, the update is
+skipped quietly (debug log only) and the entities keep their last values. The
+next update tries again. Entities only become available after the first
+successful update since Home Assistant started.
 
 ## HACS install
 
@@ -59,7 +73,11 @@ any scanner counts, including passive ones such as Shelly devices. It turns on
 with the first advertisement and off after 3 minutes without one. The bike
 switches itself off after 5 minutes idle, so a fresh "on" usually means it was
 just switched on, for example on arrival. The `source` and `rssi` attributes
-show which scanner heard it when it came into range.
+show which scanner heard it when it came into range. While **In range** is off,
+the integration doesn't try to connect.
+
+**Battery voltage** is the pack voltage the bike reports. **Battery** (%) and
+**Range** both come from the bike's range value against a 60 km full range.
 
 ## Debug logging
 

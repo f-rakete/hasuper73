@@ -7,7 +7,6 @@ from datetime import timedelta
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 DOMAIN = "super73"
-VERSION = "0.1.2"
 
 LOCAL_NAME_MATCHERS = ("SUPER73*", "Super73*", "super73*")
 
@@ -31,20 +30,31 @@ RIDE_ID = bytes((0x02, 0x03))
 SETTINGS_ID = bytes((0x03, 0x00))
 POWER_ID = bytes((0x04, 0x01))
 
+# Read on every update. MYSTERY_ID is not decoded, so it isn't read; every
+# read keeps the bike busy a little longer.
 REGISTER_IDS = (
     SETTINGS_ID,
     TOTAL_ID,
     RIDE_ID,
     POWER_ID,
     MOTION_ID,
-    MYSTERY_ID,
 )
 
 DEFAULT_WHEEL_DIAMETER_M = 0.57
-DEFAULT_CELL_S_COUNT = 13
 DEFAULT_BASE_MAX_RANGE_KM = 60.0
 DEFAULT_REAL_MAX_RANGE_KM = 60.0
 DEFAULT_CHARGE_CURRENT_THRESHOLD_A = 2.0
+
+# The bike takes one connection at a time, so each update connects, reads and
+# disconnects. A Puck.js button holds the bike about 3 s per press and waits
+# about 4 s for it to advertise, so updates must release the link quickly.
+UPDATE_INTERVAL = timedelta(seconds=10)
+CONNECT_TIMEOUT_SECONDS = 15
+CONNECT_ATTEMPTS = 2
+PAIR_TIMEOUT_SECONDS = 10
+# Upper bound for pairing plus all reads, which should take about a second.
+SESSION_TIMEOUT_SECONDS = 15
+DISCONNECT_TIMEOUT_SECONDS = 10
 
 # The bike switches itself off after 5 minutes idle, so a few minutes without
 # advertisements means it is off or gone.

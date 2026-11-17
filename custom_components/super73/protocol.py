@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from .const import (
     DEFAULT_BASE_MAX_RANGE_KM,
-    DEFAULT_CELL_S_COUNT,
     DEFAULT_REAL_MAX_RANGE_KM,
     DEFAULT_WHEEL_DIAMETER_M,
     MOTION_ID,
@@ -23,7 +22,9 @@ def parse_frame(data: bytes, state: Super73State) -> bool:
 
     register_id = data[:2]
     if register_id == SETTINGS_ID:
-        state.walk = data[3] == 0x00
+        # Walker73 reads walk as d3 == 0, but an S2 reports d3 = 00 with walk
+        # mode off, so any non-zero value means walk mode is on.
+        state.walk = data[3] != 0x00
         state.light = data[4] == 0x01
         state.assist = data[2]
         state.mode = data[5]
@@ -43,10 +44,12 @@ def parse_frame(data: bytes, state: Super73State) -> bool:
         state.raw_range = data[8]
         state.range_km = _range_from_raw(state.raw_range)
         state.battery_level = _battery_level_from_raw(state.raw_range)
-        state.battery_voltage = _battery_voltage_from_level(state.battery_level)
         return True
 
     if register_id == POWER_ID:
+        # d2-d3: pack voltage in mV (an S2 reports about 53.9 V when full and
+        # sags when the headlight switches on). d6-d7: charge current in mA.
+        state.battery_voltage = int.from_bytes(data[2:4], "little") / 1000
         state.charge_current = int.from_bytes(data[6:8], "little") / 1000
         return True
 
@@ -67,14 +70,3 @@ def _range_from_raw(raw_range: int) -> float:
 def _battery_level_from_raw(raw_range: int) -> float:
     """Convert the raw range byte into a 0-100 percentage."""
     return min(max(raw_range / DEFAULT_BASE_MAX_RANGE_KM, 0.0), 1.0) * 100
-
-
-def _battery_voltage_from_level(level_percent: float) -> float:
-    """Approximate pack voltage from level.
-
-    Walker73 evaluates a Unity discharge curve asset. The first HACS version uses
-    a conservative 13S lithium-ion linear estimate until real bike logs can tune
-    this curve.
-    """
-    cell_voltage = 3.2 + (level_percent / 100) * (4.2 - 3.2)
-    return cell_voltage * DEFAULT_CELL_S_COUNT

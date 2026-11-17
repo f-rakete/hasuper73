@@ -9,6 +9,17 @@ three values aligned:
 - `custom_components/super73/manifest.json`
 - the GitHub release/tag, prefixed with `v`
 
+## 0.2.0 - 2026-11-17
+
+- Release the bike between updates. The bike accepts one Bluetooth connection at a time and stops advertising while connected, so the permanent connection locked out the official app and other controllers such as a Puck.js button. Each update now connects, pairs, reads all registers and disconnects again, so the bike is only busy while an update is reading it.
+- Treat a bike that is busy with another device, switched off or away as normal: keep the last known values, log at debug level only, and try again on the next update. Connecting, reading and disconnecting each have a time limit, so a missing bike can't stall updates or hold the connection.
+- Skip connection attempts while **In range** is off.
+- Read every value fresh on each update instead of keeping values from earlier frames, so changes made by other devices (for example the ride mode) show up on the next update.
+- **Battery voltage** is now the pack voltage the bike reports (POWER register, bytes d2–d3, in mV) instead of an estimate from the range value. **Limp mode** uses it too.
+- Fix **Walk mode**, which was inverted: the bike reports 0 with walk mode off.
+- Stop subscribing to notifications and stop reading the undecoded `00 00` register; read device information only once per Home Assistant start. All of this shortens each connection.
+- Stop the update timer properly when the integration is unloaded.
+
 ## 0.1.4 - 2026-10-29
 
 - Add an "In range" presence binary sensor based on Bluetooth advertisements only, so passive scanners count too and it works without a connection. It turns off after 3 minutes without advertisements, and its `source` and `rssi` attributes show which scanner heard the bike when it came into range.
