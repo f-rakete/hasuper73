@@ -9,15 +9,16 @@ Display vehicles using the Bluetooth protocol documented by Walker73.
 
 ## Status
 
-Current version: `0.2.0`
+Current version: `0.3.0`
 
 This is an early implementation intended for testing against a real bike. It:
 
 - Discovers bikes exposing the metrics service UUID.
 - Discovers likely SUPER73 bikes by advertised Bluetooth name.
 - Allows manual setup by Bluetooth address.
-- Connects every 10 seconds, reads the registers Walker73 decodes, and
-  disconnects again.
+- Connects every 10 seconds, reads the live registers, and disconnects again.
+- Reads the bike's identity and firmware versions once per Home Assistant
+  start and again each time the bike comes into range.
 - Exposes read-only sensors and binary sensors.
 
 No write/control entities are exposed. The integration never changes the ride
@@ -51,6 +52,8 @@ integration tile branding is controlled by the Home Assistant Brands repository.
 
 ## Entities
 
+Ride data, read on every update:
+
 - Battery
 - Range
 - Speed
@@ -62,11 +65,29 @@ integration tile branding is controlled by the Home Assistant Brands repository.
 - Assist
 - Mode
 - Mode name
+- Warning codes
 - Light
 - Walk mode
 - Charging
 - Limp mode
+- Warning
 - In range
+
+Diagnostic, read once per Home Assistant start and each time the bike comes
+into range:
+
+- Bike model, Bike serial number, Region
+- Display firmware, Display hardware, Display bootloader, Firmware variant
+- CAN bridge firmware
+- Controller firmware, Controller variant
+- Battery firmware
+- Module ID (from the bike's advertisements, so known without connecting)
+
+Also diagnostic, but disabled by default: a **Raw register** sensor for every
+register the integration reads, showing the whole frame in hex. They are meant
+for working out the bytes that aren't decoded yet; enable the ones you need.
+Their values come from reads that happen anyway, so they don't lengthen the
+connection.
 
 **In range** only listens to Bluetooth advertisements and never connects, so
 any scanner counts, including passive ones such as Shelly devices. It turns on
@@ -76,8 +97,25 @@ just switched on, for example on arrival. The `source` and `rssi` attributes
 show which scanner heard it when it came into range. While **In range** is off,
 the integration doesn't try to connect.
 
-**Battery voltage** is the pack voltage the bike reports. **Battery** (%) and
-**Range** both come from the bike's range value against a 60 km full range.
+**Battery** is the state of charge the bike reports. If a bike doesn't serve
+that register, it falls back to an estimate from the range value against a
+60 km full range. **Range** is the bike's own estimate in km. **Battery
+voltage** is the pack voltage the bike reports. **Charge current** is the
+charger's current only; it stays at 0 while riding.
+
+**Warning** turns on while the controller reports a warning. The **Warning
+codes** sensor and the warning's `codes` attribute list the active codes as the
+display numbers them internally (page × 14 + bit). What each code means is not
+known yet.
+
+The version sensors come from two registers that reverse.bike's
+[sdcfw](https://github.com/reverse-bike/sdcfw) reads before a controller
+update. The integration reads them without authenticating first. Only if the
+bike doesn't answer does it answer the bike's security challenge the way the
+official app does. If the bike rejects that, the integration doesn't try again
+until Home Assistant restarts, and the version sensors stay unknown. A version
+the bike reports as 0 (for example a battery that doesn't report its firmware)
+shows as unknown.
 
 ## Debug logging
 
@@ -92,7 +130,9 @@ logger:
 ## Attribution
 
 The BLE UUIDs, register IDs, polling order, and frame decoding are based on
-[Walker73](https://github.com/AxelFougues/Walker73).
+[Walker73](https://github.com/AxelFougues/Walker73). The version registers and
+the security-service handshake follow reverse.bike's
+[sdcfw](https://github.com/reverse-bike/sdcfw).
 
 ## Releasing
 

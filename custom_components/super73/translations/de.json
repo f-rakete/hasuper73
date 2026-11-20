@@ -31,13 +31,28 @@
       "assist": { "name": "Unterstützungsstufe" },
       "mode": { "name": "Modus" },
       "mode_name": { "name": "Modusname" },
-      "raw_range": { "name": "Reichweite (Rohwert)" }
+      "warning_codes": { "name": "Warncodes" },
+      "raw_range": { "name": "Reichweite (Rohwert)" },
+      "bike_model": { "name": "Fahrradmodell" },
+      "bike_serial": { "name": "Fahrrad-Seriennummer" },
+      "region": { "name": "Region" },
+      "module_id": { "name": "Modul-ID" },
+      "display_firmware": { "name": "Display-Firmware" },
+      "display_hardware": { "name": "Display-Hardware" },
+      "display_bootloader": { "name": "Display-Bootloader" },
+      "firmware_variant": { "name": "Firmware-Variante" },
+      "can_bridge_firmware": { "name": "CAN-Bridge-Firmware" },
+      "controller_firmware": { "name": "Controller-Firmware" },
+      "controller_variant": { "name": "Controller-Variante" },
+      "battery_firmware": { "name": "Akku-Firmware" },
+      "raw_frame": { "name": "Register {register} (Rohwert)" }
     },
     "binary_sensor": {
       "light": { "name": "Licht" },
       "walk_mode": { "name": "Schiebehilfe" },
       "charging": { "name": "Laden" },
       "limp_mode": { "name": "Notlaufmodus" },
+      "warning": { "name": "Warnung" },
       "in_range": { "name": "In Reichweite" }
     }
   }

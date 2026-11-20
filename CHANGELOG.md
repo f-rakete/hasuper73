@@ -9,6 +9,19 @@ three values aligned:
 - `custom_components/super73/manifest.json`
 - the GitHub release/tag, prefixed with `v`
 
+## 0.3.0 - 2026-11-20
+
+- Add the bike's firmware versions as diagnostic sensors: **Display firmware**, **Display hardware**, **Display bootloader**, **Firmware variant**, **CAN bridge firmware**, **Controller firmware**, **Controller variant** and **Battery firmware**. They come from the two version registers (`FC FC`, `FA FA`) that reverse.bike's sdcfw reads before a controller update. If the bike doesn't answer them, the integration answers its security challenge once, the way the official app does; a rejected answer is not retried until Home Assistant restarts.
+- Add **Bike model**, **Bike serial number** and **Region** (`02 10`–`02 12`), and **Module ID**, which comes from the bike's advertisements and is known without connecting. Identity and versions are read once per Home Assistant start and again each time the bike comes into range, so a firmware update shows up without reading them on every update. They have their own time limit and never fail an update.
+- Show the versions and the module ID on the device page as well, also when the bike was off or away while Home Assistant started.
+- **Battery** is now the state of charge the bike reports (`04 02`) instead of an estimate from the range value. Bikes that don't serve that register keep the estimate.
+- Add **Warning** (problem) and **Warning codes**, from the controller's warning register (`02 00`). The codes are the display's internal numbers; what they mean is not known yet.
+- Fix **Odometer**, which read only 16 of the register's 32 bits and would have wrapped at 6553.5 km.
+- **Range** reads the register's full 12 bits instead of one byte and is no longer capped at 60 km. When the bike has no estimate yet (all bits set), Range is unknown instead of a wrong number.
+- **Battery voltage** and **Charge current** read all 32 bits of their fields, as the display firmware does.
+- Add disabled-by-default **Raw register** diagnostic sensors, one per register the integration reads, showing the whole frame in hex, for decoding the remaining bytes. They add no reads.
+- Each update now reads two more registers (`04 02`, `02 00`); if a bike doesn't serve them, their values stay unknown and the update goes on.
+
 ## 0.2.0 - 2026-11-17
 
 - Release the bike between updates. The bike accepts one Bluetooth connection at a time and stops advertising while connected, so the permanent connection locked out the official app and other controllers such as a Puck.js button. Each update now connects, pairs, reads all registers and disconnects again, so the bike is only busy while an update is reading it.

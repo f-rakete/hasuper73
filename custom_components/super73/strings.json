@@ -31,13 +31,28 @@
       "assist": { "name": "Assist" },
       "mode": { "name": "Mode" },
       "mode_name": { "name": "Mode name" },
-      "raw_range": { "name": "Raw range" }
+      "warning_codes": { "name": "Warning codes" },
+      "raw_range": { "name": "Raw range" },
+      "bike_model": { "name": "Bike model" },
+      "bike_serial": { "name": "Bike serial number" },
+      "region": { "name": "Region" },
+      "module_id": { "name": "Module ID" },
+      "display_firmware": { "name": "Display firmware" },
+      "display_hardware": { "name": "Display hardware" },
+      "display_bootloader": { "name": "Display bootloader" },
+      "firmware_variant": { "name": "Firmware variant" },
+      "can_bridge_firmware": { "name": "CAN bridge firmware" },
+      "controller_firmware": { "name": "Controller firmware" },
+      "controller_variant": { "name": "Controller variant" },
+      "battery_firmware": { "name": "Battery firmware" },
+      "raw_frame": { "name": "Raw register {register}" }
     },
     "binary_sensor": {
       "light": { "name": "Light" },
       "walk_mode": { "name": "Walk mode" },
       "charging": { "name": "Charging" },
       "limp_mode": { "name": "Limp mode" },
+      "warning": { "name": "Warning" },
       "in_range": { "name": "In range" }
     }
   }

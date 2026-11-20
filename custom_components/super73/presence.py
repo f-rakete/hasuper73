@@ -11,7 +11,11 @@ from homeassistant.components import bluetooth
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import PRESENCE_CHECK_INTERVAL, PRESENCE_TIMEOUT_SECONDS
+from .const import (
+    COMODULE_MANUFACTURER_ID,
+    PRESENCE_CHECK_INTERVAL,
+    PRESENCE_TIMEOUT_SECONDS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +34,7 @@ class Super73PresenceTracker:
         self.in_range: bool | None = None
         self.source: str | None = None
         self.rssi: int | None = None
+        self.module_id: str | None = None
         self._last_seen: float | None = None
         self._started: float | None = None
         self._listeners: list[Callable[[], None]] = []
@@ -73,6 +78,11 @@ class Super73PresenceTracker:
     ) -> None:
         """Handle one advertisement packet from any scanner."""
         self._last_seen = time.monotonic()
+        module_id = _module_id(service_info)
+        if module_id is not None and module_id != self.module_id:
+            self.module_id = module_id
+            if self.in_range:
+                self._async_notify_listeners()
         if self.in_range:
             return
         scanner = bluetooth.async_scanner_by_source(self._hass, service_info.source)
@@ -96,5 +106,18 @@ class Super73PresenceTracker:
     def _async_set_in_range(self, in_range: bool) -> None:
         """Update presence and notify listeners."""
         self.in_range = in_range
+        self._async_notify_listeners()
+
+    @callback
+    def _async_notify_listeners(self) -> None:
+        """Tell listeners that presence or the module ID changed."""
         for listener in list(self._listeners):
             listener()
+
+
+def _module_id(service_info: bluetooth.BluetoothServiceInfoBleak) -> str | None:
+    """Return the Comodule module ID from the advertised manufacturer data."""
+    data = service_info.manufacturer_data.get(COMODULE_MANUFACTURER_ID)
+    if data is None or len(data) < 8:
+        return None
+    return data[:8].hex()

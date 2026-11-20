@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -25,6 +25,7 @@ class Super73BinarySensorEntityDescription(BinarySensorEntityDescription):
     """SUPER73 binary sensor description."""
 
     value_fn: Callable[[Super73State], bool | None]
+    attrs_fn: Callable[[Super73State], dict[str, Any]] | None = None
 
 
 BINARY_SENSORS: tuple[Super73BinarySensorEntityDescription, ...] = (
@@ -49,6 +50,13 @@ BINARY_SENSORS: tuple[Super73BinarySensorEntityDescription, ...] = (
         key="limp_mode",
         translation_key="limp_mode",
         value_fn=lambda state: state.limp,
+    ),
+    Super73BinarySensorEntityDescription(
+        key="warning",
+        translation_key="warning",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        value_fn=lambda state: state.warning,
+        attrs_fn=lambda state: {"codes": list(state.warning_codes or ())},
     ),
 )
 
@@ -94,6 +102,13 @@ class Super73BinarySensor(
     def is_on(self) -> bool | None:
         """Return the binary sensor state."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra attributes, if the description defines any."""
+        if self.entity_description.attrs_fn is None:
+            return None
+        return self.entity_description.attrs_fn(self.coordinator.data)
 
 
 class Super73InRangeBinarySensor(BinarySensorEntity):
