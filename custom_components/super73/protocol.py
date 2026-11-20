@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from .const import (
     BIKE_MODEL_ID,
-    BIKE_SERIAL_ID,
     DEFAULT_WHEEL_DIAMETER_M,
     MODULE_VERSIONS_ID,
     MOTION_ID,
@@ -70,10 +69,14 @@ def parse_frame(data: bytes, state: Super73State) -> bool:
 
     if register_id == POWER_ID:
         # d2-d5: pack voltage in mV (an S2 reports about 53.9 V when full and
-        # sags when the headlight switches on). d6-d9: charge current in mA;
-        # it stays at 0 while riding, so it is the charger's current only.
+        # sags when the headlight switches on). d6-d9: charge current in mA,
+        # signed: it is about 0 while riding, but an S2 occasionally reports
+        # small negative values (ff ff in d8-d9), which unsigned would read as
+        # millions of amps.
         state.battery_voltage = int.from_bytes(data[2:6], "little") / 1000
-        state.charge_current = int.from_bytes(data[6:10], "little") / 1000
+        state.charge_current = (
+            int.from_bytes(data[6:10], "little", signed=True) / 1000
+        )
         return True
 
     if register_id == STATE_OF_CHARGE_ID:
@@ -112,12 +115,9 @@ def parse_info(frames: dict[bytes, bytes], info: Super73DeviceInfo) -> None:
     if model is not None:
         info.bike_model = _text(model[2:7])
 
-    serial = frames.get(BIKE_SERIAL_ID)
-    if serial is not None:
-        # The display assembles the serial from ASCII digits: two at the end
-        # of the model frame (d8-d9) and eight in the serial frame (d2-d9).
-        prefix = model[8:10] if model is not None and model[8:10].isdigit() else b""
-        info.bike_serial = _text(prefix + serial[2:10])
+    # 02 11 is only kept as a raw frame: on an S2 it holds four non-ASCII
+    # bytes that don't match the frame number stamped on the bike, so what it
+    # identifies is unknown.
 
     region = frames.get(REGION_ID)
     if region is not None:

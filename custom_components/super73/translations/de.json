@@ -34,7 +34,6 @@
       "warning_codes": { "name": "Warncodes" },
       "raw_range": { "name": "Reichweite (Rohwert)" },
       "bike_model": { "name": "Fahrradmodell" },
-      "bike_serial": { "name": "Fahrrad-Seriennummer" },
       "region": { "name": "Region" },
       "module_id": { "name": "Modul-ID" },
       "display_firmware": { "name": "Display-Firmware" },
@@ -43,7 +42,7 @@
       "firmware_variant": { "name": "Firmware-Variante" },
       "can_bridge_firmware": { "name": "CAN-Bridge-Firmware" },
       "controller_firmware": { "name": "Controller-Firmware" },
-      "controller_variant": { "name": "Controller-Variante" },
+      "controller_variant": { "name": "Firmware-Typ" },
       "battery_firmware": { "name": "Akku-Firmware" },
       "raw_frame": { "name": "Register {register} (Rohwert)" }
     },

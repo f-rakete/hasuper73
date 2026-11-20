@@ -123,9 +123,9 @@ async def main():
     s = await c.async_update()
     assert s.battery_level == 85.0 and s.total_km == 7000.0 and s.warning_codes == (14, 17)
     assert s.info.controller_version == 410 and s.info.stm_version == 201015, s.info
-    assert s.info.bike_model == "RX" and s.info.region == "EU" and s.info.bike_serial == "1234567890"
+    assert s.info.bike_model == "RX" and s.info.region == "EU"
     assert s.info.firmware_version == "221122"
-    assert bike.auth_attempts == 1 and c._info_stale is False
+    assert bike.auth_attempts == 1 and c._info_pending is False
     assert set(s.raw_frames) == {"0300", "0202", "0203", "0401", "0201", "0402", "0200"}
     assert set(s.info.raw_frames) == {"0210", "0211", "0212", "fcfc", "fafa"}
     # Second update: no info reads, no auth, info snapshot carried over.
@@ -134,10 +134,11 @@ async def main():
     assert bike.reads == ["0300", "0202", "0203", "0401", "0201", "0402", "0200"], bike.reads
     assert bike.auth_attempts == 1 and s2.info.controller_version == 410
     assert s2 == s, "unchanged bike gives an equal state, so entities aren't rewritten"
-    # Coming into range again re-reads info (and authenticates again).
-    c.mark_info_stale()
+    # Coming into range again doesn't re-read info: it's read once per HA start.
+    c.recheck_optional_registers()
+    bike.reads.clear()
     await c.async_update()
-    assert bike.auth_attempts == 2 and c._info_stale is False
+    assert bike.auth_attempts == 1 and "fcfc" not in bike.reads, bike.reads
 
     # B: versions served without auth -> no auth attempt at all.
     bike = FakeBike(versions_need_auth=False)
@@ -145,21 +146,18 @@ async def main():
     s = await c.async_update()
     assert bike.auth_attempts == 0 and s.info.controller_version == 410
 
-    # C: auth rejected -> bike disconnects. Live values survive; info retries
-    # later without authenticating again.
+    # C: auth rejected -> bike disconnects. Live values survive, identity read
+    # before the failure is kept, and nothing is retried.
     bike = FakeBike(accept_auth=False)
     c = make_client(bike)
     s = await c.async_update()
     assert s.battery_level == 85.0 and s.info.controller_version is None
-    assert c._auth_failed and c._info_stale and c._info_retry_at > 0
+    assert s.info.bike_model == "RX", "identity read before the failure is kept"
+    assert c._auth_failed and not c._info_pending
+    c.recheck_optional_registers()
     bike.reads.clear()
     await c.async_update()
-    assert "fcfc" not in bike.reads, "within the retry pause, info isn't read"
-    c.mark_info_stale()
-    s = await c.async_update()
-    assert bike.auth_attempts == 1, "a rejected answer is never retried"
-    assert c._info_stale is False and s.info.bike_model == "RX"
-    assert s.info.controller_version is None
+    assert "fcfc" not in bike.reads and bike.auth_attempts == 1, bike.reads
 
     # D: a bike without SoC / warning registers: estimate + unknown, no failure.
     bike = FakeBike(missing={"0402", "0200", "0210", "0211", "0212"}, versions_need_auth=False)
@@ -169,6 +167,15 @@ async def main():
     assert s.warning_codes is None and s.warning is None
     assert s.info.bike_model is None and s.info.controller_version == 410
     assert "0402" not in s.raw_frames
+    # Unanswered optional registers aren't asked again until the bike comes
+    # back into range.
+    bike.reads.clear()
+    await c.async_update()
+    assert bike.reads == ["0300", "0202", "0203", "0401", "0201"], bike.reads
+    c.recheck_optional_registers()
+    bike.reads.clear()
+    await c.async_update()
+    assert "0402" in bike.reads and "0200" in bike.reads, bike.reads
 
     # E: a core register failing still fails the update.
     bike = FakeBike()

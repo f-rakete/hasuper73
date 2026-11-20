@@ -34,7 +34,6 @@
       "warning_codes": { "name": "Warning codes" },
       "raw_range": { "name": "Raw range" },
       "bike_model": { "name": "Bike model" },
-      "bike_serial": { "name": "Bike serial number" },
       "region": { "name": "Region" },
       "module_id": { "name": "Module ID" },
       "display_firmware": { "name": "Display firmware" },
@@ -43,7 +42,7 @@
       "firmware_variant": { "name": "Firmware variant" },
       "can_bridge_firmware": { "name": "CAN bridge firmware" },
       "controller_firmware": { "name": "Controller firmware" },
-      "controller_variant": { "name": "Controller variant" },
+      "controller_variant": { "name": "Firmware type" },
       "battery_firmware": { "name": "Battery firmware" },
       "raw_frame": { "name": "Raw register {register}" }
     },

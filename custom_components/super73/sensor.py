@@ -144,19 +144,13 @@ SENSORS: tuple[Super73SensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=lambda state: state.raw_range,
     ),
-    # Identity and versions, read once per Home Assistant run and again each
-    # time the bike comes into range.
+    # Identity and versions, read once, on the first connection after Home
+    # Assistant starts.
     Super73SensorEntityDescription(
         key="bike_model",
         translation_key="bike_model",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda state: state.info.bike_model,
-    ),
-    Super73SensorEntityDescription(
-        key="bike_serial",
-        translation_key="bike_serial",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda state: state.info.bike_serial,
     ),
     Super73SensorEntityDescription(
         key="region",

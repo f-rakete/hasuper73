@@ -11,8 +11,8 @@ from .const import DEFAULT_BASE_MAX_RANGE_KM
 class Super73DeviceInfo:
     """Static information: GATT device information plus identity and version registers.
 
-    Read once per Home Assistant run and again each time the bike comes into
-    range. A field keeps its last value when a later read fails.
+    Read once, on the first connection after Home Assistant starts. Fields
+    whose read failed stay unknown until the next start.
     """
 
     name: str | None = None
@@ -22,7 +22,6 @@ class Super73DeviceInfo:
     firmware_version: str | None = None
     # 0x0210 / 0x0211 / 0x0212
     bike_model: str | None = None
-    bike_serial: str | None = None
     region: str | None = None
     # 0xFCFC: display module (nRF bootloader, firmware variant) and CAN bridge
     nrf_bootloader_version: int | None = None

@@ -37,11 +37,9 @@ from .const import (
     GENERIC_ACCESS_NAME_CHARACTERISTIC,
     GENERIC_ACCESS_SERVICE,
     INFO_REGISTER_IDS,
-    INFO_RETRY_SECONDS,
     INFO_TIMEOUT_SECONDS,
     METRICS_CHARACTERISTIC_REGISTER,
     METRICS_CHARACTERISTIC_REGISTER_ID,
-    METRICS_CHARACTERISTIC_REGISTER_NOTIFIER,
     METRICS_SERVICE,
     OPTIONAL_REGISTER_IDS,
     PAIR_TIMEOUT_SECONDS,
@@ -74,16 +72,19 @@ class Super73Client:
         self.name = name or "SUPER73"
         self.state = Super73State()
         self.device_info = Super73DeviceInfo(name=self.name)
-        self._info_stale = True
-        self._info_retry_at = 0.0
+        # Identity and versions are read once, on the first connection after
+        # Home Assistant starts. Reading them has upset the bike's Bluetooth
+        # for minutes afterwards, so they are never re-read or retried.
+        self._info_pending = True
         self._auth_failed = False
+        # Optional registers the bike didn't answer since it came into range.
+        self._unserved: set[bytes] = set()
         self._client: BleakClientWithServiceCache | None = None
         self._operation_lock = asyncio.Lock()
 
-    def mark_info_stale(self) -> None:
-        """Read device information, identity and versions again on the next update."""
-        self._info_stale = True
-        self._info_retry_at = 0.0
+    def recheck_optional_registers(self) -> None:
+        """Ask again for optional registers the bike didn't answer last time."""
+        self._unserved.clear()
 
     async def async_update(self) -> Super73State:
         """Connect, read every register into a fresh state, and disconnect.
@@ -97,7 +98,7 @@ class Super73Client:
             try:
                 async with asyncio.timeout(SESSION_TIMEOUT_SECONDS):
                     state = await self._read_session(client)
-                if self._info_stale and time.monotonic() >= self._info_retry_at:
+                if self._info_pending:
                     await self._read_info_session(client)
             finally:
                 await self._disconnect(client)
@@ -156,8 +157,14 @@ class Super73Client:
             frame = await self._read_register(client, register_id)
             self._store_frame(state, register_id, frame)
         for register_id in OPTIONAL_REGISTER_IDS:
+            if register_id in self._unserved:
+                continue
             frame = await self._read_optional_register(client, register_id)
-            if frame is not None:
+            if frame is None:
+                # Every unanswered read keeps the bike busy for nothing, so
+                # don't ask again until the bike next comes into range.
+                self._unserved.add(register_id)
+            else:
                 self._store_frame(state, register_id, frame)
         return state
 
@@ -169,44 +176,48 @@ class Super73Client:
         parse_frame(frame, state)
 
     async def _read_info_session(self, client: BleakClientWithServiceCache) -> None:
-        """Read static information, bounded and never failing the update.
+        """Read static information once, bounded and never failing the update.
 
-        If it doesn't finish, the values read so far are kept and it is tried
-        again after a pause, or when the bike next comes into range, so a read
-        that keeps failing doesn't hold the bike longer on every update.
+        If it doesn't finish, the values read so far are kept and the rest
+        stays unknown until Home Assistant restarts.
         """
+        self._info_pending = False
         started = time.monotonic()
+        frames: dict[bytes, bytes] = {}
         try:
             async with asyncio.timeout(INFO_TIMEOUT_SECONDS):
                 await self._read_device_info(client)
-                frames = await self._read_info_registers(client)
+                await self._read_info_registers(client, frames)
         except Exception as err:  # noqa: BLE001 - BLE stacks fail in many backend-specific ways.
-            self._info_retry_at = time.monotonic() + INFO_RETRY_SECONDS
             _LOGGER.debug(
-                "SUPER73 device information not read, retrying in %d s: %s",
-                INFO_RETRY_SECONDS,
+                "SUPER73 device information incomplete after %.1f s, not retrying: %s",
+                time.monotonic() - started,
                 describe_error(err),
             )
-            return
+        else:
+            _LOGGER.debug(
+                "SUPER73 device information read in %.1f s",
+                time.monotonic() - started,
+            )
         parse_info(frames, self.device_info)
-        self._info_stale = False
-        _LOGGER.debug(
-            "SUPER73 device information read in %.1f s",
-            time.monotonic() - started,
-        )
 
     async def _read_info_registers(
-        self, client: BleakClientWithServiceCache
-    ) -> dict[bytes, bytes]:
-        """Read identity and version registers, authenticating only if needed."""
-        frames: dict[bytes, bytes] = {}
+        self, client: BleakClientWithServiceCache, frames: dict[bytes, bytes]
+    ) -> None:
+        """Read identity and version registers into frames, authenticating only if needed.
+
+        Each read is logged before it starts, so a hang shows which register
+        caused it.
+        """
         for register_id in INFO_REGISTER_IDS:
+            _LOGGER.debug("SUPER73 reading register %s", register_id.hex())
             frame = await self._read_optional_register(client, register_id)
             if frame is not None:
                 frames[register_id] = frame
 
         authenticated = False
         for register_id in VERSION_REGISTER_IDS:
+            _LOGGER.debug("SUPER73 reading register %s", register_id.hex())
             frame = await self._read_optional_register(client, register_id)
             if frame is None and not authenticated and not self._auth_failed:
                 authenticated = await self._authenticate(client)
@@ -216,7 +227,6 @@ class Super73Client:
                 frame = await self._read_optional_register(client, register_id)
             if frame is not None:
                 frames[register_id] = frame
-        return frames
 
     async def _authenticate(self, client: BleakClientWithServiceCache) -> bool:
         """Answer the security service's challenge the way the official app does.
@@ -289,6 +299,7 @@ class Super73Client:
         characteristic_uuid: str,
     ) -> str | None:
         """Read a text characteristic if present."""
+        _LOGGER.debug("SUPER73 reading characteristic %s", characteristic_uuid[4:8])
         try:
             service = client.services.get_service(service_uuid)
             if service is None or service.get_characteristic(characteristic_uuid) is None:
@@ -327,18 +338,14 @@ class Super73Client:
         """Read a register some bikes may not serve.
 
         Returns None unless the bike answers with a frame for this register,
-        so an unanswered register is unknown rather than zero. Like sdcfw, it
-        also tries the notifier characteristic, which some firmware answers
-        on instead. Only a lost connection raises.
+        so an unanswered register is unknown rather than zero. A bike that
+        doesn't serve a register returns the previously selected frame. Only a
+        lost connection raises.
         """
         try:
             # No pair-and-retry: the link is already encrypted by now, so a
             # refusal here is about the register, and pairing can take 10 s.
             frame = await self._read_register_once(client, register_id)
-            if frame[:2] != register_id:
-                frame = bytes(
-                    await client.read_gatt_char(METRICS_CHARACTERISTIC_REGISTER_NOTIFIER)
-                )
         except Exception as err:  # noqa: BLE001 - BLE stacks fail in many backend-specific ways.
             if not client.is_connected:
                 raise

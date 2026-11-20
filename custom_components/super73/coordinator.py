@@ -64,13 +64,10 @@ class Super73DataUpdateCoordinator(DataUpdateCoordinator[Super73State]):
 
     @callback
     def _handle_presence_change(self) -> None:
-        """Re-read device information each time the bike comes into range.
-
-        Picks up firmware updates without reading static values on every poll.
-        """
+        """Ask again for unanswered optional registers each time the bike comes into range."""
         in_range = self.presence.in_range
         if in_range and self._was_in_range is False:
-            self.client.mark_info_stale()
+            self.client.recheck_optional_registers()
         self._was_in_range = in_range
 
     async def _async_update_data(self) -> Super73State:

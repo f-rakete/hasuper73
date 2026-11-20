@@ -72,8 +72,8 @@ OPTIONAL_REGISTER_IDS = (
     WARNING_ID,
 )
 
-# Identity registers that don't change while the bike runs. Read once per Home
-# Assistant run and again each time the bike comes into range.
+# Identity registers that don't change while the bike runs. Read once, on the
+# first connection after Home Assistant starts.
 INFO_REGISTER_IDS = (
     BIKE_MODEL_ID,
     BIKE_SERIAL_ID,
@@ -101,11 +101,10 @@ CONNECT_ATTEMPTS = 2
 PAIR_TIMEOUT_SECONDS = 10
 # Upper bound for pairing plus all reads, which should take about a second.
 SESSION_TIMEOUT_SECONDS = 15
-# Separate bound for the device information, identity and version reads that
-# follow, so they can't fail an update that already has its values. After a
-# failure they wait before trying again.
-INFO_TIMEOUT_SECONDS = 15
-INFO_RETRY_SECONDS = 300
+# Separate bound for the one-time device information, identity and version
+# reads, so they can't fail an update that already has its values. They took
+# 2.5 s on an S2 when they worked; a failure is not retried.
+INFO_TIMEOUT_SECONDS = 8
 DISCONNECT_TIMEOUT_SECONDS = 10
 
 # The bike switches itself off after 5 minutes idle, so a few minutes without

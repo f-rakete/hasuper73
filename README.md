@@ -17,8 +17,8 @@ This is an early implementation intended for testing against a real bike. It:
 - Discovers likely SUPER73 bikes by advertised Bluetooth name.
 - Allows manual setup by Bluetooth address.
 - Connects every 10 seconds, reads the live registers, and disconnects again.
-- Reads the bike's identity and firmware versions once per Home Assistant
-  start and again each time the bike comes into range.
+- Reads the bike's identity and firmware versions once, on the first
+  connection after Home Assistant starts.
 - Exposes read-only sensors and binary sensors.
 
 No write/control entities are exposed. The integration never changes the ride
@@ -73,13 +73,12 @@ Ride data, read on every update:
 - Warning
 - In range
 
-Diagnostic, read once per Home Assistant start and each time the bike comes
-into range:
+Diagnostic, read once, on the first connection after Home Assistant starts:
 
-- Bike model, Bike serial number, Region
+- Bike model, Region
 - Display firmware, Display hardware, Display bootloader, Firmware variant
 - CAN bridge firmware
-- Controller firmware, Controller variant
+- Controller firmware, Firmware type
 - Battery firmware
 - Module ID (from the bike's advertisements, so known without connecting)
 

@@ -33,6 +33,12 @@ assert s.charging is False and s.limp is False
 s = parsed("04 01 aa d2 00 00 d0 07 00 00")
 assert s.charge_current == 2.0 and s.charging is True
 
+# Charge current is signed: real S2 frames (2026-11-18) with ff ff in d8-d9.
+s = parsed("04 01 f1 c2 00 00 45 fe ff ff")
+assert s.charge_current == -0.443 and s.charging is False, s.charge_current
+s = parsed("04 01 30 cb 00 00 8f ca ff ff")
+assert s.charge_current == -13.681 and s.charging is False, s.charge_current
+
 # TOTAL: 7000.0 km needs all four bytes (d6-d7 alone would read 446.4 km).
 s = parsed("02 02 00 24 00 00 70 11 01 00")
 assert s.total_km == 7000.0, s.total_km
@@ -78,14 +84,13 @@ parse_info(
     info,
 )
 assert info.bike_model == "RX", info.bike_model
-assert info.bike_serial == "1234567890", info.bike_serial
 assert info.region == "EU"
 assert info.stm_version == 201015 and info.controller_variant is None
 assert info.nrf_bootloader_version == 6 and info.firmware_variant == 231
 assert info.controller_version == 410 and info.battery_version is None
 assert info.raw_frames["fafa"] == "fa fa 00 00 01 9a 00 00 00 00"
 
-# Non-text bytes show as hex rather than garbage; no serial prefix from non-digits.
+# Non-text bytes show as hex rather than garbage.
 info = Super73DeviceInfo(controller_version=430)
 parse_info(
     {
@@ -94,7 +99,7 @@ parse_info(
     },
     info,
 )
-assert info.bike_model == "01 02 03 04 05" and info.bike_serial == "AB", info
+assert info.bike_model == "01 02 03 04 05", info
 assert info.controller_version == 430, "an unread register keeps its last value"
 
 # Entities: every value_fn runs on an empty and a full state; every
